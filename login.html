@@ -17,7 +17,6 @@
 
     /* Login Section */
     #login-section {
-      display: none;
       background: white;
       padding: 20px;
       border-radius: 10px;
@@ -57,6 +56,7 @@
     /* Dashboard Section */
     #dashboard-section {
       display: none;
+      width: 100%;
     }
 
     #dashboard-section h1 {
@@ -155,31 +155,32 @@
       background: #005b9f;
     }
 
+    /* Debug Info */
     #debugInfo {
       position: fixed;
-      bottom: 10px;
-      left: 10px;
+      bottom: 20px;
+      right: 20px;
       background: rgba(0, 0, 0, 0.8);
       color: white;
-      padding: 10px;
-      border-radius: 5px;
+      padding: 15px;
+      border-radius: 8px;
       font-size: 12px;
-      max-width: 300px;
-      max-height: 200px;
+      width: 300px;
+      height: 200px;
       overflow-y: auto;
-      display: flex;
-      flex-direction: column;
+      z-index: 1000;
+      display: none;
     }
 
-    #debugInfo.hidden {
-      display: none;
+    #debugInfo.visible {
+      display: block;
     }
 
     #debugHeader {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 5px;
+      margin-bottom: 10px;
     }
 
     #debugHeader button {
@@ -187,7 +188,7 @@
       color: white;
       border: none;
       border-radius: 3px;
-      padding: 2px 8px;
+      padding: 4px 8px;
       cursor: pointer;
       font-size: 12px;
       margin-left: 5px;
@@ -199,14 +200,15 @@
 
     #showDebugBtn {
       position: fixed;
-      bottom: 10px;
-      left: 10px;
+      bottom: 20px;
+      right: 20px;
       background: #2196F3;
       color: white;
       border: none;
       border-radius: 5px;
       padding: 8px 16px;
       cursor: pointer;
+      z-index: 1000;
       display: none;
     }
 
@@ -214,20 +216,71 @@
       background: #1976D2;
     }
 
-    #logoutBtn {
-      position: absolute;
+    /* Sidebar Styles */
+    #sidebar {
+      position: fixed;
+      top: 0;
+      left: -250px;
+      width: 250px;
+      height: 100%;
+      background: #007acc;
+      color: white;
+      transition: left 0.3s ease;
+      z-index: 1000;
+      padding-top: 60px;
+    }
+
+    #sidebar.open {
+      left: 0;
+    }
+
+    #sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 20px 0;
+    }
+
+    #sidebar li {
+      padding: 15px 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #sidebar li:hover {
+      background: #005b9f;
+    }
+
+    #menuToggle {
+      position: fixed;
       top: 10px;
       left: 10px;
-      background: #f44336;
+      background: #007acc;
       color: white;
       border: none;
       border-radius: 5px;
-      padding: 8px 16px;
+      padding: 8px 12px;
       cursor: pointer;
+      z-index: 1001;
+      display: none;
     }
 
-    #logoutBtn:hover {
-      background: #d32f2f;
+    #menuToggle:hover {
+      background: #005b9f;
+    }
+
+    #menuToggle .hamburger {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      width: 20px;
+      height: 16px;
+    }
+
+    #menuToggle .hamburger span {
+      width: 100%;
+      height: 2px;
+      background: white;
+      border-radius: 2px;
     }
   </style>
 </head>
@@ -244,8 +297,22 @@
 
   <!-- Dashboard Section -->
   <div id="dashboard-section">
+    <!-- Sidebar -->
+    <button id="menuToggle">
+      <div class="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </button>
+    
+    <div id="sidebar">
+      <ul>
+        <li id="logoutBtn">Logout</li>
+      </ul>
+    </div>
+
     <h1>Room Status Overview</h1>
-    <button id="logoutBtn">Logout</button>
     <div class="status" id="connectionStatus">Connecting...</div>
 
     <div id="roomList" class="grid">
@@ -274,16 +341,18 @@
 
     <!-- Debug Info -->
     <div id="debugInfo">
-      <div id="debug Stuart
-      <div>
-        <button id="clearDebugBtn" onclick="clearDebug()">Clear</button>
-        <button id="debugCloseBtn" onclick="toggleDebug()">X</button>
+      <div id="debugHeader">
+        <span>Debug Log</span>
+        <div>
+          <button id="clearDebugBtn" onclick="clearDebug()">Clear</button>
+          <button id="debugCloseBtn" onclick="toggleDebug()">X</button>
+        </div>
       </div>
+      <div id="debugLog"></div>
     </div>
-    <div id="debugLog"></div>
-  </div>
 
-  <button id="showDebugBtn" onclick="toggleDebug()">Show Debug</button>
+    <button id="showDebugBtn" onclick="toggleDebug()">Show Debug</button>
+  </div>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -302,7 +371,6 @@
       appId: "1:605051019732:web:1e36ec87fb496c099f7641",
       measurementId: "G-53YQMGF4Y9"
     };
-    firebase.initializeApp(firebaseConfig);
 
     // Debug logging function
     function debugLog(message) {
@@ -317,12 +385,12 @@
     function toggleDebug() {
       const debugInfo = document.getElementById('debugInfo');
       const showDebugBtn = document.getElementById('showDebugBtn');
-      if (debugInfo.classList.contains('hidden')) {
-        debugInfo.classList.remove('hidden');
-        showDebugBtn.style.display = 'none';
-      } else {
-        debugInfo.classList.add('hidden');
+      if (debugInfo.classList.contains('visible')) {
+        debugInfo.classList.remove('visible');
         showDebugBtn.style.display = 'block';
+      } else {
+        debugInfo.classList.add('visible');
+        showDebugBtn.style.display = 'none';
       }
     }
 
@@ -331,29 +399,50 @@
       document.getElementById('debugLog').innerHTML = '';
     }
 
+    // Toggle sidebar
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('open');
+    }
+
     // Handle authentication state
     function initializeApp() {
+      // Initialize Firebase
       if (typeof firebase === 'undefined') {
         debugLog('Firebase SDK not loaded yet, retrying in 1 second...');
         setTimeout(initializeApp, 1000);
         return;
       }
 
+      firebase.initializeApp(firebaseConfig);
       debugLog('Firebase SDK loaded successfully');
+
+      // Explicitly set initial state to show login
+      const loginSection = document.getElementById('login-section');
+      const dashboardSection = document.getElementById('dashboard-section');
+      const menuToggle = document.getElementById('menuToggle');
+      const showDebugBtn = document.getElementById('showDebugBtn');
+      
+      loginSection.style.display = 'block';
+      dashboardSection.style.display = 'none';
+      menuToggle.style.display = 'none';
+      showDebugBtn.style.display = 'none';
 
       // Check authentication state
       firebase.auth().onAuthStateChanged((user) => {
-        const loginSection = document.getElementById('login-section');
-        const dashboardSection = document.getElementById('dashboard-section');
         if (user) {
           debugLog('User is authenticated');
           loginSection.style.display = 'none';
           dashboardSection.style.display = 'block';
+          menuToggle.style.display = 'block';
+          showDebugBtn.style.display = 'block';
           initializeFirebase();
         } else {
           debugLog('No user is authenticated');
           loginSection.style.display = 'block';
           dashboardSection.style.display = 'none';
+          menuToggle.style.display = 'none';
+          showDebugBtn.style.display = 'none';
         }
       });
 
@@ -376,10 +465,14 @@
       document.getElementById('logoutBtn').addEventListener('click', () => {
         firebase.auth().signOut().then(() => {
           debugLog('Logout successful');
+          document.getElementById('sidebar').classList.remove('open');
         }).catch((error) => {
           debugLog('Logout error: ' + error.message);
         });
       });
+
+      // Handle menu toggle
+      document.getElementById('menuToggle').addEventListener('click', toggleSidebar);
     }
 
     function initializeFirebase() {
@@ -490,6 +583,7 @@
       view.style.display = "flex";
       view.dataset.current = room;
       document.getElementById("roomTitle").textContent = room.toUpperCase();
+      document.getElementById('sidebar').classList.remove('open');
     }
 
     function goBack() {
